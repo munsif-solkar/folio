@@ -1,7 +1,7 @@
 {
   "name": "folio",
   "version": "1.0.0",
-  "description": "A private, local-only credit and debit ledger.",
+  "description": "A private, simple and clean local-only credit debit ledger built with React Native.",
   "author": "Munsif Solkar",
   "license": "MIT",
   "repository": {
