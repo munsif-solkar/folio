@@ -16,9 +16,8 @@
       "package": "com.folio.ledger",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#F5F7FA",
+        "backgroundColor": "#14181F",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
