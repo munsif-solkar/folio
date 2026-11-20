@@ -11,6 +11,13 @@
       },
       "channel": "preview"
     },
+    "preview-arm64": {
+      "extends": "preview",
+      "node": "24.19.0",
+      "env": {
+        "FOLIO_ANDROID_ARM64_ONLY": "1"
+      }
+    },
     "production": {
       "android": {
         "buildType": "app-bundle"
