@@ -1,7 +1,7 @@
 import * as Print from 'expo-print';
 
 import { shareLocalFile, withFriendlyFileName, describeError } from './share-file';
-import { buildStatementHtml, statementFileName } from './statement';
+import { buildStatementHtml, statementFileName, StatementOptions } from './statement';
 import { Entry, Person } from './types';
 
 export type ShareResult = 'shared' | 'downloaded' | 'printed';
@@ -21,11 +21,11 @@ let pendingStatement: Promise<ShareResult> | null = null;
 export function shareStatement(
   person: Person,
   entries: Entry[],
-  creditTerms = false,
+  options: StatementOptions = {},
 ): Promise<ShareResult> {
   if (pendingStatement) return pendingStatement;
 
-  pendingStatement = createAndShareStatement(person, entries, creditTerms).finally(() => {
+  pendingStatement = createAndShareStatement(person, entries, options).finally(() => {
     pendingStatement = null;
   });
 
@@ -35,9 +35,9 @@ export function shareStatement(
 async function createAndShareStatement(
   person: Person,
   entries: Entry[],
-  creditTerms: boolean,
+  options: StatementOptions,
 ): Promise<ShareResult> {
-  const html = buildStatementHtml(person, entries, new Date(), { creditTerms });
+  const html = buildStatementHtml(person, entries, new Date(), options);
   const { uri: printedUri } = await Print.printToFileAsync({ html, base64: false });
   const uri = await withFriendlyFileName(printedUri, statementFileName(person));
 

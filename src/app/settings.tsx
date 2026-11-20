@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,10 +67,12 @@ export default function SettingsScreen() {
     creditTerms,
     haptics,
     currency,
+    statementName,
     setMode,
     setCompact,
     setCreditTerms,
     setHaptics,
+    setStatementName,
   } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { people, entries, replaceData } = useStore();
@@ -265,6 +268,42 @@ export default function SettingsScreen() {
               </View>
               <MaterialIcons name="chevron-right" size={20} color={colors.inkFaint} />
             </Pressable>
+          </View>
+        </SettingsSection>
+
+        <SettingsSection label="Statements">
+          <View style={styles.card}>
+            <View style={styles.inputRow}>
+              <View style={styles.rowIcon}>
+                <MaterialIcons name="badge" size={18} color={colors.inkMuted} />
+              </View>
+              <View style={styles.inputBody}>
+                <AppText style={styles.rowTitle}>Name on statement</AppText>
+                <AppText style={styles.rowCaption}>
+                  Printed as the sender on snapshots and PDF statements
+                </AppText>
+                <TextInput
+                  value={statementName}
+                  onChangeText={setStatementName}
+                  onBlur={() => setStatementName(statementName.trim())}
+                  placeholder="Your name"
+                  placeholderTextColor={colors.inkFaint}
+                  accessibilityLabel="Name on statement"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  maxLength={60}
+                  returnKeyType="done"
+                  blurOnSubmit
+                  style={styles.textInput}
+                />
+              </View>
+            </View>
+          </View>
+          <View style={styles.dataNote}>
+            <MaterialIcons name="lock-outline" size={13} color={colors.inkFaint} />
+            <AppText style={styles.dataNoteText}>
+              Saved on this device. Leave it empty to print without a sender name.
+            </AppText>
           </View>
         </SettingsSection>
 
@@ -587,6 +626,29 @@ const createStyles = (colors: Palette) =>
       fontFamily: fonts.medium,
       fontSize: 11,
       color: colors.inkFaint,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      paddingHorizontal: 13,
+      paddingVertical: 13,
+    },
+    inputBody: {
+      flex: 1,
+      gap: 2,
+    },
+    textInput: {
+      height: 44,
+      marginTop: 10,
+      paddingHorizontal: 12,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.lineStrong,
+      backgroundColor: colors.surfaceMuted,
+      color: colors.ink,
+      fontFamily: fonts.regular,
+      fontSize: 14,
     },
     divider: {
       height: 1,

@@ -16,6 +16,7 @@ import { Avatar } from '@/components/Avatar';
 import { KpiStrip } from '@/components/KpiStrip';
 import { Wordmark } from '@/components/Logo';
 import { Button, Fab, IconButton, Pill } from '@/components/ui';
+import { UpdateBanner } from '@/components/UpdateBanner';
 import { tapFeedback } from '@/lib/feedback';
 import {
   formatHeaderDate,
@@ -36,7 +37,7 @@ import { Entry, PersonSummary } from '@/lib/types';
 export default function HomeScreen() {
   const { people, entries } = useStore();
   const insets = useSafeAreaInsets();
-  const { colors, density, peopleSort, setPeopleSort } = useTheme();
+  const { colors, density, peopleSort, setPeopleSort, statementName, ready } = useTheme();
   const styles = useThemedStyles(createStyles);
 
   const { summaries, toReceive, toGive, receiveCount, giveCount } = useMemo(() => {
@@ -106,6 +107,10 @@ export default function HomeScreen() {
               />
             </View>
           </View>
+
+          <UpdateBanner />
+
+          {ready && !statementName.trim() ? <NamePrompt /> : null}
 
           <View style={[styles.hero, { marginTop: density.heroTop }]}>
             <AppText style={styles.eyebrow}>{formatHeaderDate(today).toUpperCase()}</AppText>
@@ -203,6 +208,34 @@ export default function HomeScreen() {
         />
       </View>
     </AppScreen>
+  );
+}
+
+function NamePrompt() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <Pressable
+      onPress={() => {
+        router.push('/settings');
+        tapFeedback();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel="Add your name to statements"
+      style={({ pressed }) => [styles.namePrompt, pressed && styles.cardPressed]}
+    >
+      <View style={styles.nameIcon}>
+        <MaterialIcons name="badge" size={18} color={colors.blueDeep} />
+      </View>
+      <View style={styles.nameBody}>
+        <AppText style={styles.nameTitle}>Add your name to statements</AppText>
+        <AppText style={styles.nameCaption} numberOfLines={2}>
+          It appears as the sender on PDF statements and snapshots.
+        </AppText>
+      </View>
+      <MaterialIcons name="chevron-right" size={19} color={colors.inkFaint} />
+    </Pressable>
   );
 }
 
@@ -321,6 +354,42 @@ const createStyles = (colors: Palette) =>
       fontSize: 10.5,
       color: colors.inkMuted,
       letterSpacing: 0.1,
+    },
+    namePrompt: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 11,
+      marginTop: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      backgroundColor: colors.blueSoft,
+      borderWidth: 1,
+      borderColor: colors.blueLine,
+      borderRadius: radius.lg,
+    },
+    nameIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 11,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nameBody: {
+      flex: 1,
+      gap: 2,
+    },
+    nameTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 13.5,
+      letterSpacing: -0.2,
+      color: colors.ink,
+    },
+    nameCaption: {
+      fontFamily: fonts.regular,
+      fontSize: 10.5,
+      lineHeight: 14,
+      color: colors.inkSoft,
     },
     hero: {
       marginTop: 28,

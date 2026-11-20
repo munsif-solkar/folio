@@ -31,8 +31,11 @@ const C = {
  * The image shared from an account. Kept on a fixed light palette so it looks
  * the same in WhatsApp regardless of the theme the app is using.
  */
-export const AccountSnapshot = forwardRef<HostInstance, { person: Person; summary: PersonSummary }>(
-  function AccountSnapshot({ person, summary }, ref) {
+export const AccountSnapshot = forwardRef<
+  HostInstance,
+  { person: Person; summary: PersonSummary; statementName?: string }
+>(function AccountSnapshot({ person, summary, statementName = '' }, ref) {
+    const sender = statementName.trim();
     const toReceive = Math.max(summary.balance, 0);
     const toGive = Math.max(-summary.balance, 0);
     const net = Math.abs(summary.balance);
@@ -86,6 +89,11 @@ export const AccountSnapshot = forwardRef<HostInstance, { person: Person; summar
             <AppText style={styles.since}>
               On the books since {formatShortDate(toDateKey(new Date(person.createdAt)))}
             </AppText>
+            {sender ? (
+              <AppText style={styles.sender} numberOfLines={1}>
+                From {sender}
+              </AppText>
+            ) : null}
           </View>
         </View>
 
@@ -246,6 +254,13 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     color: C.muted,
     marginTop: 3,
+  },
+  sender: {
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    lineHeight: 14,
+    color: C.inkSoft,
+    marginTop: 2,
   },
   balanceCard: {
     marginTop: 20,

@@ -27,7 +27,7 @@ export function ShareAccountSheet({
   entries: Entry[];
   summary: PersonSummary;
 }) {
-  const { colors, creditTerms } = useTheme();
+  const { colors, creditTerms, statementName } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { showToast } = useToast();
   const snapshotRef = useRef<HostInstance>(null);
@@ -67,7 +67,7 @@ export function ShareAccountSheet({
   const handleStatement = async () => {
     if (!begin('statement')) return;
     try {
-      const result = await shareStatement(person, entries, creditTerms);
+      const result = await shareStatement(person, entries, { creditTerms, statementName });
       onClose();
       showToast(
         result === 'downloaded'
@@ -146,7 +146,12 @@ export function ShareAccountSheet({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <AccountSnapshot ref={snapshotRef} person={person} summary={summary} />
+        <AccountSnapshot
+          ref={snapshotRef}
+          person={person}
+          summary={summary}
+          statementName={statementName}
+        />
       </View>
     </BottomSheet>
   );

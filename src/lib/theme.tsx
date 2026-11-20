@@ -318,6 +318,8 @@ type StoredSettings = {
   haptics: boolean;
   /** Currency used to display every amount. */
   currency: CurrencyCode;
+  /** Name printed on statements and snapshots as the sender. */
+  statementName: string;
 };
 
 type ThemeContextValue = {
@@ -329,6 +331,7 @@ type ThemeContextValue = {
   peopleSort: PeopleSort;
   haptics: boolean;
   currency: CurrencyCode;
+  statementName: string;
   density: Density;
   ready: boolean;
   setMode: (mode: ThemeMode) => void;
@@ -337,6 +340,7 @@ type ThemeContextValue = {
   setPeopleSort: (sort: PeopleSort) => void;
   setHaptics: (haptics: boolean) => void;
   setCurrency: (currency: CurrencyCode) => void;
+  setStatementName: (name: string) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -352,6 +356,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     peopleSort: 'newest',
     haptics: true,
     currency: DEFAULT_CURRENCY,
+    statementName: '',
   });
   const [ready, setReady] = useState(false);
 
@@ -377,6 +382,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             haptics:
               typeof parsed.haptics === 'boolean' ? parsed.haptics : prev.haptics,
             currency: isCurrencyCode(parsed.currency) ? parsed.currency : prev.currency,
+            statementName:
+              typeof parsed.statementName === 'string'
+                ? parsed.statementName
+                : prev.statementName,
           }));
         }
       } catch {
@@ -426,7 +435,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, currency }));
   }, []);
 
-  const { mode, compact, creditTerms, peopleSort, haptics, currency } = settings;
+  const setStatementName = useCallback((statementName: string) => {
+    setSettings((prev) => ({ ...prev, statementName }));
+  }, []);
+
+  const { mode, compact, creditTerms, peopleSort, haptics, currency, statementName } = settings;
   // Set during render so children never paint the previous currency for a frame.
   setActiveCurrency(currency);
   const resolved: ResolvedTheme =
@@ -445,6 +458,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       peopleSort,
       haptics,
       currency,
+      statementName,
       density,
       ready,
       setMode,
@@ -453,11 +467,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setPeopleSort,
       setHaptics,
       setCurrency,
+      setStatementName,
     }),
     [
       compact,
       creditTerms,
       currency,
+      statementName,
       density,
       haptics,
       mode,
@@ -471,6 +487,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setHaptics,
       setPeopleSort,
       setMode,
+      setStatementName,
     ],
   );
 

@@ -8,8 +8,9 @@ import {
   formatNumericDate,
   formatNumber,
   formatShortDate,
+  toDateKey,
 } from './format';
-import { getStatementModel, statementFileName } from './statement';
+import { getStatementModel, statementFileName, StatementOptions } from './statement';
 import { ledgerTerms } from './terms';
 import { Entry, Person } from './types';
 
@@ -24,7 +25,7 @@ const RED = '#C42B2B';
 
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
-const MARGIN = 40;
+const MARGIN = 42;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
 let fontCache: Promise<{ regular: string; bold: string } | null> | null = null;
@@ -56,11 +57,12 @@ function loadFonts() {
 export async function shareStatement(
   person: Person,
   entries: Entry[],
-  creditTerms = false,
+  options: StatementOptions = {},
 ): Promise<ShareResult> {
+  const { creditTerms = false, statementName = '' } = options;
+  const sender = statementName.trim();
   const terms = ledgerTerms(creditTerms);
-  const [{ jsPDF: JsPDF }] = await Promise.all([import('jspdf'), loadFonts()]);
-  const fonts = await loadFonts();
+  const [{ jsPDF: JsPDF }, fonts] = await Promise.all([import('jspdf'), loadFonts()]);
   const pdf = new JsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4', compress: true });
   const hasFonts = Boolean(fonts);
 
@@ -87,6 +89,13 @@ export async function shareStatement(
       ? 'All settled up'
       : `${model.balance > 0 ? "You'll receive" : "You'll give"} ${money(model.balance)}`;
   const netColor = Math.abs(model.balance) < 0.01 ? MUTED : model.balance > 0 ? GREEN : RED;
+  const accountSince = formatShortDate(toDateKey(new Date(model.accountSince)));
+  const period =
+    model.periodStart && model.periodEnd
+      ? model.periodStart === model.periodEnd
+        ? formatShortDate(model.periodStart)
+        : `${formatShortDate(model.periodStart)} – ${formatShortDate(model.periodEnd)}`
+      : 'No entries yet';
 
   // ---- Masthead ------------------------------------------------------------
   pdf.setFillColor(INK);
@@ -96,202 +105,208 @@ export async function shareStatement(
   pdf.setFillColor('#8CE0A8');
   pdf.circle(MARGIN + 30, 68, 2.8, 'F');
 
-  setText(17, INK, 'bold');
-  pdf.text('Folio', MARGIN + 48, 56);
-  setText(7, FAINT);
-  pdf.setCharSpace(1.1);
-  pdf.text('PERSONAL LEDGER', MARGIN + 48, 68);
-  pdf.setCharSpace(0);
-
-  setText(8, MUTED, 'bold');
+  setText(18, INK, 'bold');
+  pdf.text('Folio', MARGIN + 48, 58);
+  setText(9, FAINT);
   pdf.setCharSpace(1.2);
-  pdf.text('ACCOUNT STATEMENT', PAGE_W - MARGIN, 48, { align: 'right' });
+  pdf.text('PERSONAL LEDGER', MARGIN + 48, 71);
   pdf.setCharSpace(0);
-  setText(9.5, '#3C4553');
-  pdf.text(formatNumericDate(model.generatedAt), PAGE_W - MARGIN, 63, { align: 'right' });
 
-  pdf.setDrawColor(LINE);
-  pdf.setLineWidth(1);
-  pdf.line(MARGIN, 92, PAGE_W - MARGIN, 92);
+  setText(9, MUTED, 'bold');
+  pdf.setCharSpace(1.2);
+  pdf.text('ACCOUNT STATEMENT', PAGE_W - MARGIN, 51, { align: 'right' });
+  pdf.setCharSpace(0);
+  setText(10.5, '#3C4553');
+  pdf.text(formatNumericDate(model.generatedAt), PAGE_W - MARGIN, 67, { align: 'right' });
+
+  pdf.setDrawColor('#B9C2D0');
+  pdf.setLineWidth(0.8);
+  pdf.line(MARGIN, 94, PAGE_W - MARGIN, 94);
 
   // ---- Parties -------------------------------------------------------------
-  setText(7, FAINT, 'bold');
+  setText(9, FAINT, 'bold');
   pdf.setCharSpace(1);
   pdf.text('STATEMENT FOR', MARGIN, 116);
   pdf.setCharSpace(0);
 
-  setText(21, INK, 'bold');
-  pdf.text(person.name || 'Unnamed account', MARGIN, 140);
-  setText(9.5, MUTED);
-  pdf.text(person.phone || 'No contact number added', MARGIN, 155);
+  setText(20, INK, 'bold');
+  pdf.text(person.name || 'Unnamed account', MARGIN, 141);
+  setText(10.5, MUTED);
+  pdf.text(person.phone || 'No contact number added', MARGIN, 157);
+  pdf.text(`Account since ${accountSince}`, MARGIN, 171);
+  if (sender) {
+    setText(10.5, INK, 'bold');
+    pdf.text(`From ${sender}`, MARGIN, 185);
+  }
 
-  setText(7, FAINT, 'bold');
+  setText(9, FAINT, 'bold');
   pdf.setCharSpace(1);
   pdf.text('STATEMENT PERIOD', PAGE_W - MARGIN, 116, { align: 'right' });
   pdf.setCharSpace(0);
-  setText(11, INK, 'bold');
-  const period =
-    model.periodStart && model.periodEnd
-      ? model.periodStart === model.periodEnd
-        ? formatShortDate(model.periodStart)
-        : `${formatShortDate(model.periodStart)} – ${formatShortDate(model.periodEnd)}`
-      : 'No entries yet';
-  pdf.text(period, PAGE_W - MARGIN, 134, { align: 'right' });
-  setText(9.5, MUTED);
+  setText(13, INK, 'bold');
+  pdf.text(period, PAGE_W - MARGIN, 140, { align: 'right' });
+  setText(10.5, MUTED);
   pdf.text(
     `${model.rows.length} ${model.rows.length === 1 ? 'entry' : 'entries'}`,
     PAGE_W - MARGIN,
-    149,
+    157,
     { align: 'right' },
   );
 
   // ---- Summary -------------------------------------------------------------
-  const boxW = (CONTENT_W - 10) / 2;
-  const boxY = 176;
-  const boxH = 67;
+  const boxW = (CONTENT_W - 14) / 2;
+  const boxY = 202;
+  const boxH = 66;
+  const rightX = MARGIN + boxW + 14;
 
-  pdf.setFillColor('#E9F6EF');
-  pdf.roundedRect(MARGIN, boxY, boxW, boxH, 12, 12, 'F');
-  setText(7, '#4F7A65', 'bold');
-  pdf.setCharSpace(1.1);
+  pdf.setDrawColor(LINE);
+  pdf.roundedRect(MARGIN, boxY, boxW, boxH, 10, 10, 'S');
+  pdf.roundedRect(rightX, boxY, boxW, boxH, 10, 10, 'S');
+
+  setText(9, MUTED, 'bold');
+  pdf.setCharSpace(0.8);
   pdf.text('TO RECEIVE', MARGIN + 15, boxY + 20);
+  pdf.text('TO GIVE', rightX + 15, boxY + 20);
   pdf.setCharSpace(0);
-  setText(18, GREEN, 'bold');
-  pdf.text(money(model.toReceive), MARGIN + 15, boxY + 44);
-  setText(7.5, '#5F8573');
-  pdf.text(model.toReceive > 0 ? 'Balance in your favour' : 'Nothing pending', MARGIN + 15, boxY + 57);
 
-  pdf.setFillColor('#FCEBEA');
-  pdf.roundedRect(MARGIN + boxW + 10, boxY, boxW, boxH, 12, 12, 'F');
-  setText(7, '#8A5A57', 'bold');
-  pdf.setCharSpace(1.1);
-  pdf.text('TO GIVE', MARGIN + boxW + 25, boxY + 20);
-  pdf.setCharSpace(0);
-  setText(18, RED, 'bold');
-  pdf.text(money(model.toGive), MARGIN + boxW + 25, boxY + 44);
-  setText(7.5, '#8F6562');
-  pdf.text(model.toGive > 0 ? 'Balance you owe' : 'Nothing pending', MARGIN + boxW + 25, boxY + 57);
+  setText(20, GREEN, 'bold');
+  pdf.text(money(model.toReceive), MARGIN + 15, boxY + 45);
+  setText(20, RED, 'bold');
+  pdf.text(money(model.toGive), rightX + 15, boxY + 45);
 
-  // ---- Net strip -----------------------------------------------------------
-  const netY = boxY + boxH + 12;
-  pdf.setFillColor(INK);
-  pdf.roundedRect(MARGIN, netY, CONTENT_W, 33, 9, 9, 'F');
-  setText(7, '#B9C0CC', 'bold');
-  pdf.setCharSpace(1.2);
-  pdf.text('NET POSITION', MARGIN + 15, netY + 20);
+  setText(10.5, MUTED);
+  pdf.text(model.toReceive > 0 ? 'Balance in your favour' : 'Nothing pending', MARGIN + 15, boxY + 59);
+  pdf.text(model.toGive > 0 ? 'Balance you owe' : 'Nothing pending', rightX + 15, boxY + 59);
+
+  // ---- Net position (plain, no dark strip) ---------------------------------
+  const netY = 292;
+  setText(9.5, MUTED, 'bold');
+  pdf.setCharSpace(1);
+  pdf.text('NET POSITION', MARGIN, netY);
   pdf.setCharSpace(0);
-  setText(9.5, model.balance >= 0 ? '#8CE0A8' : '#FFB4AE', 'bold');
-  pdf.text(netCopy, PAGE_W - MARGIN - 15, netY + 20, { align: 'right' });
+  setText(14, netColor, 'bold');
+  pdf.text(netCopy, PAGE_W - MARGIN, netY, { align: 'right' });
+  pdf.setDrawColor('#B9C2D0');
+  pdf.line(MARGIN, netY + 10, PAGE_W - MARGIN, netY + 10);
 
   // ---- Table ---------------------------------------------------------------
   const colDate = MARGIN;
   const colDetails = MARGIN + 68;
-  const colGave = PAGE_W - MARGIN - 168;
-  const colReceived = PAGE_W - MARGIN - 86;
   const colBalance = PAGE_W - MARGIN;
+  const colReceived = colBalance - 104;
+  const colGave = colReceived - 92;
 
   const drawTableHeader = (top: number) => {
-    setText(6.8, MUTED, 'bold');
-    pdf.setCharSpace(0.7);
+    setText(8.5, MUTED, 'bold');
+    pdf.setCharSpace(0.6);
     pdf.text('DATE', colDate, top);
     pdf.text('DETAILS', colDetails, top);
     pdf.text(terms.gaveHeader.toUpperCase(), colGave, top, { align: 'right' });
     pdf.text(terms.receivedHeader.toUpperCase(), colReceived, top, { align: 'right' });
     pdf.text('BALANCE', colBalance, top, { align: 'right' });
     pdf.setCharSpace(0);
-    pdf.setDrawColor('#D7DEE8');
-    pdf.line(MARGIN, top + 7, PAGE_W - MARGIN, top + 7);
+    pdf.setDrawColor('#B9C2D0');
+    pdf.line(MARGIN, top + 8, PAGE_W - MARGIN, top + 8);
   };
 
-  let y = netY + 33 + 42;
-  drawTableHeader(y - 17);
+  let y = 341;
+  drawTableHeader(y - 18);
   let rowTop = y;
 
   const rows = [...model.rows].reverse();
   if (rows.length === 0) {
-    setText(9, FAINT);
-    pdf.text('No entries recorded yet.', PAGE_W / 2, rowTop + 25, { align: 'center' });
-    rowTop += 52;
+    setText(11, FAINT);
+    pdf.text('No entries recorded yet.', PAGE_W / 2, rowTop + 24, { align: 'center' });
+    rowTop += 50;
   }
 
   for (const row of rows) {
-    const rowHeight = 31;
-    const capacity = PAGE_H - 120;
-    if (rowTop + rowHeight > capacity) {
+    const details = [row.note, row.method].filter(Boolean).join(' · ');
+    setText(9.5, MUTED);
+    const detailLines = details ? pdf.splitTextToSize(details, colGave - colDetails - 12) : [];
+    const rowHeight = Math.max(35, 23 + detailLines.length * 13);
+
+    if (rowTop + rowHeight > PAGE_H - 100) {
       pdf.addPage();
-      setText(8, FAINT, 'bold');
+      setText(8.5, FAINT, 'bold');
+      pdf.setCharSpace(0.8);
       pdf.text('FOLIO · STATEMENT CONTINUED', MARGIN, 46);
+      pdf.setCharSpace(0);
       pdf.setDrawColor(LINE);
       pdf.line(MARGIN, 54, PAGE_W - MARGIN, 54);
       drawTableHeader(76);
       rowTop = 90;
     }
 
-    setText(8.5, MUTED);
-    pdf.text(formatShortDate(row.date).replace(/ \d{4}$/, ''), colDate, rowTop + 13);
+    setText(10.5, MUTED);
+    pdf.text(formatShortDate(row.date).replace(/ \d{4}$/, ''), colDate, rowTop + 14);
 
-    setText(9.5, row.type === 'gave' ? RED : GREEN, 'bold');
-    pdf.text(row.type === 'gave' ? terms.gave : terms.received, colDetails, rowTop + 12);
+    setText(11, row.type === 'gave' ? RED : GREEN, 'bold');
+    pdf.text(row.type === 'gave' ? terms.gave : terms.received, colDetails, rowTop + 14);
 
-    const details = [row.note, row.method].filter(Boolean).join(' · ');
-    if (details) {
-      setText(7.5, MUTED);
-      pdf.text(details.length > 50 ? `${details.slice(0, 50)}…` : details, colDetails, rowTop + 23);
+    if (detailLines.length > 0) {
+      setText(9.5, MUTED);
+      detailLines.forEach((line: string, index: number) => {
+        pdf.text(line, colDetails, rowTop + 28 + index * 13);
+      });
     }
 
     if (row.type === 'gave') {
-      setText(9, RED);
-      pdf.text(money(row.amount), colGave, rowTop + 13, { align: 'right' });
+      setText(10.5, RED);
+      pdf.text(money(row.amount), colGave, rowTop + 14, { align: 'right' });
     } else {
-      setText(9, GREEN);
-      pdf.text(money(row.amount), colReceived, rowTop + 13, { align: 'right' });
+      setText(10.5, GREEN);
+      pdf.text(money(row.amount), colReceived, rowTop + 14, { align: 'right' });
     }
 
-    setText(9, INK, 'bold');
-    pdf.text(`${row.balance < 0 ? '−' : ''}${money(row.balance)}`, colBalance, rowTop + 13, {
+    setText(10.5, INK, 'bold');
+    pdf.text(`${row.balance < 0 ? '−' : ''}${money(Math.abs(row.balance))}`, colBalance, rowTop + 14, {
       align: 'right',
     });
 
-    pdf.setDrawColor('#EEF1F5');
+    pdf.setDrawColor(LINE);
     pdf.line(MARGIN, rowTop + rowHeight, PAGE_W - MARGIN, rowTop + rowHeight);
     rowTop += rowHeight;
   }
 
   // ---- Closing -------------------------------------------------------------
-  if (rowTop + 88 > PAGE_H - 60) {
+  if (rowTop + 100 > PAGE_H - 70) {
     pdf.addPage();
-    rowTop = 60;
+    rowTop = 62;
   }
-  const closingY = rowTop + 14;
-  pdf.setFillColor('#F5F7FA');
-  pdf.roundedRect(MARGIN, closingY, CONTENT_W, 38, 10, 10, 'F');
-  setText(7.5, MUTED, 'bold');
-  pdf.setCharSpace(1);
-  pdf.text('CLOSING BALANCE', MARGIN + 15, closingY + 23);
-  pdf.setCharSpace(0);
-  setText(13, netColor, 'bold');
-  pdf.text(netCopy, PAGE_W - MARGIN - 15, closingY + 24, { align: 'right' });
+  const closingY = rowTop + 12;
+  pdf.setDrawColor('#B9C2D0');
+  pdf.setLineWidth(0.8);
+  pdf.line(MARGIN, closingY, PAGE_W - MARGIN, closingY);
 
-  setText(7.5, FAINT);
-  pdf.text(
-    `Total — ${terms.gaveHeader} ${money(model.gave)}  ·  ${terms.receivedHeader} ${money(model.received)}.  Balances reflect all entries in this statement.`,
-    MARGIN,
-    closingY + 56,
-  );
+  setText(9.5, MUTED, 'bold');
+  pdf.setCharSpace(0.8);
+  pdf.text('CLOSING BALANCE', MARGIN, closingY + 22);
+  pdf.setCharSpace(0);
+  setText(16, netColor, 'bold');
+  pdf.text(netCopy, PAGE_W - MARGIN, closingY + 23, { align: 'right' });
+  pdf.setDrawColor(LINE);
+  pdf.line(MARGIN, closingY + 36, PAGE_W - MARGIN, closingY + 36);
+
+  setText(10, MUTED);
+  const footnote = `Totals — ${terms.gaveHeader} ${money(model.gave)}  ·  ${
+    terms.receivedHeader
+  } ${money(model.received)}. Balances reflect all entries in this statement.`;
+  pdf.text(pdf.splitTextToSize(footnote, CONTENT_W), MARGIN, closingY + 55);
 
   // ---- Page footers --------------------------------------------------------
   const pages = pdf.getNumberOfPages();
   for (let page = 1; page <= pages; page += 1) {
     pdf.setPage(page);
     pdf.setDrawColor(LINE);
-    pdf.line(MARGIN, PAGE_H - 46, PAGE_W - MARGIN, PAGE_H - 46);
-    setText(6.8, FAINT);
+    pdf.line(MARGIN, PAGE_H - 48, PAGE_W - MARGIN, PAGE_H - 48);
+    setText(9, FAINT);
     pdf.text(
       `Folio · Personal ledger · Generated ${formatNumericDate(model.generatedAt)}`,
       MARGIN,
-      PAGE_H - 31,
+      PAGE_H - 30,
     );
-    pdf.text(`Page ${page} of ${pages}`, PAGE_W - MARGIN, PAGE_H - 31, { align: 'right' });
+    pdf.text(`Page ${page} of ${pages}`, PAGE_W - MARGIN, PAGE_H - 30, { align: 'right' });
   }
 
   const blob = pdf.output('blob');

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Folio",
     "slug": "folio-ledger",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "scheme": "folio",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.folio.ledger",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#14181F",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -54,6 +54,12 @@
         "projectId": "d0cba57d-e45b-4ce2-9070-0169d1e76278"
       }
     },
-    "owner": "munsifsolkar"
+    "owner": "munsifsolkar",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d0cba57d-e45b-4ce2-9070-0169d1e76278"
+    }
   }
 }
