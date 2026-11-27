@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,7 +21,6 @@ type Props = {
 
 export function BottomSheet({ visible, onClose, children, maxHeightRatio = 0.92 }: Props) {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
   const { colors } = useTheme();
   const [rendered, setRendered] = useState(visible);
   const [progress] = useState(() => new Animated.Value(visible ? 1 : 0));
@@ -67,7 +65,7 @@ export function BottomSheet({ visible, onClose, children, maxHeightRatio = 0.92 
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close sheet" />
         </Animated.View>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
           style={styles.keyboardDock}
           pointerEvents="box-none"
         >
@@ -75,7 +73,7 @@ export function BottomSheet({ visible, onClose, children, maxHeightRatio = 0.92 
             style={[
               styles.sheet,
               {
-                maxHeight: height * maxHeightRatio,
+                maxHeight: `${Math.round(maxHeightRatio * 100)}%`,
                 paddingBottom: Math.max(insets.bottom, 14),
                 opacity: progress,
                 backgroundColor: colors.bg,
@@ -114,6 +112,7 @@ const styles = StyleSheet.create({
     left: 0,
   },
   keyboardDock: {
+    flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'flex-end',

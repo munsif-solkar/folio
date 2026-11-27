@@ -2,7 +2,7 @@
   "expo": {
     "name": "Folio",
     "slug": "folio-ledger",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scheme": "folio",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.folio.ledger",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#14181F",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { ComponentRef, useEffect, useRef, useState } from 'react';
 import {
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +10,6 @@ import {
 } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { Avatar } from '@/components/Avatar';
 import { BottomSheet } from '@/components/BottomSheet';
 import { MiniCalendar } from '@/components/MiniCalendar';
 import { Button, IconButton } from '@/components/ui';
@@ -47,6 +47,7 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
   const [date, setDate] = useState(todayKey());
   const [showCalendar, setShowCalendar] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const noteRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
     if (!visible) return;
@@ -98,16 +99,14 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.header}>
         <View style={styles.headerCopy}>
-          <AppText variant="micro">{entry ? 'EDIT ENTRY' : 'NEW ENTRY'}</AppText>
+          <AppText variant="micro" style={styles.eyebrow}>
+            {entry ? 'EDIT ENTRY' : 'NEW ENTRY'} · {person.name}
+          </AppText>
           <AppText variant="heading" style={styles.title}>
             {entry ? 'Update entry' : 'Record an entry'}
           </AppText>
-          <View style={styles.personLine}>
-            <Avatar name={person.name} size={22} />
-            <AppText style={styles.personName}>{person.name}</AppText>
-          </View>
         </View>
-        <IconButton name="close" label="Close" onPress={onClose} size={38} iconSize={20} />
+        <IconButton name="close" label="Close" onPress={onClose} size={34} iconSize={18} />
       </View>
 
       <ScrollView
@@ -155,6 +154,10 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
             style={styles.amountInput}
             accessibilityLabel="Amount"
             maxLength={12}
+            autoFocus
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => noteRef.current?.focus()}
           />
           <View style={styles.typeBadge}>
             <MaterialIcons
@@ -178,6 +181,7 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
         </AppText>
         <Pressable
           onPress={() => {
+            Keyboard.dismiss();
             setShowCalendar((current) => !current);
             tapFeedback();
           }}
@@ -240,10 +244,11 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
 
         <View style={styles.labelRow}>
           <AppText variant="micro">Note</AppText>
-          <AppText style={styles.optional}>OPTIONAL</AppText>
+          <AppText style={styles.optional}>OPTIONAL · {note.length}/120</AppText>
         </View>
         <View style={styles.noteField}>
           <TextInput
+            ref={noteRef}
             value={note}
             onChangeText={setNote}
             placeholder="What was this for?"
@@ -252,9 +257,10 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
             style={styles.noteInput}
             multiline
             maxLength={120}
+            returnKeyType="done"
+            onSubmitEditing={handleSave}
             accessibilityLabel="Note"
           />
-          <AppText style={styles.noteCount}>{note.length}/120</AppText>
         </View>
 
         {confirmDelete ? (
@@ -299,8 +305,10 @@ export function EntryFormSheet({ visible, onClose, person, entry }: Props) {
         <Button
           label={entry ? 'Save changes' : 'Save entry'}
           icon="check"
+          compact
           onPress={handleSave}
           disabled={!isValid}
+          style={styles.saveButton}
         />
       </View>
     </BottomSheet>
@@ -348,71 +356,68 @@ const createStyles = (colors: Palette) =>
   StyleSheet.create({
     header: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: 2,
-      paddingBottom: 14,
+      paddingTop: 0,
+      paddingBottom: 8,
+      minHeight: 44,
     },
     headerCopy: {
-      gap: 5,
+      gap: 1,
       flex: 1,
     },
-    title: {
-      marginTop: 1,
-    },
-    personLine: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 7,
-      marginTop: 3,
-    },
-    personName: {
-      fontFamily: fonts.medium,
-      fontSize: 12.5,
+    eyebrow: {
+      fontSize: 9.5,
+      letterSpacing: 0.7,
       color: colors.inkMuted,
+    },
+    title: {
+      fontSize: 19,
+      lineHeight: 23,
+      marginTop: 0,
     },
     scroll: {
       flexShrink: 1,
     },
     scrollContent: {
-      paddingBottom: 8,
+      paddingBottom: 4,
     },
     segment: {
       flexDirection: 'row',
-      gap: 4,
+      gap: 3,
       backgroundColor: colors.surfaceMuted,
-      padding: 4,
+      padding: 3,
       borderRadius: radius.md,
-      marginBottom: 20,
+      marginBottom: 8,
     },
     segmentOption: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 7,
-      height: 46,
-      borderRadius: 13,
+      gap: 5,
+      height: 34,
+      borderRadius: 11,
     },
     segmentOptionActive: {
       backgroundColor: colors.surface,
       ...shadowSoft,
     },
     segmentIcon: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
     },
     segmentText: {
-      fontFamily: fonts.regular,
-      fontSize: 13,
+      fontFamily: fonts.medium,
+      fontSize: 12,
       color: colors.inkMuted,
       letterSpacing: -0.1,
     },
     fieldLabel: {
-      marginBottom: 7,
+      marginBottom: 4,
       color: colors.inkMuted,
     },
     amountField: {
@@ -421,10 +426,10 @@ const createStyles = (colors: Palette) =>
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.line,
-      borderRadius: radius.lg,
-      paddingHorizontal: 16,
-      height: 82,
-      marginBottom: 18,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      height: 56,
+      marginBottom: 8,
     },
     amountFieldGave: {
       borderColor: colors.redLine,
@@ -434,16 +439,16 @@ const createStyles = (colors: Palette) =>
     },
     currency: {
       fontFamily: fonts.medium,
-      fontSize: 28,
+      fontSize: 21,
       color: colors.inkMuted,
-      marginRight: 6,
-      marginTop: 3,
+      marginRight: 5,
+      marginTop: 1,
     },
     amountInput: {
       flex: 1,
       fontFamily: fonts.bold,
-      fontSize: 38,
-      letterSpacing: -1.2,
+      fontSize: 30,
+      letterSpacing: -0.8,
       color: colors.ink,
       height: '100%',
       paddingVertical: 0,
@@ -452,32 +457,32 @@ const createStyles = (colors: Palette) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 2,
-      paddingHorizontal: 8,
-      height: 24,
+      paddingHorizontal: 6,
+      height: 20,
       borderRadius: radius.pill,
       backgroundColor: colors.surfaceMuted,
     },
     typeBadgeText: {
       fontFamily: fonts.bold,
-      fontSize: 8.5,
-      letterSpacing: 0.6,
+      fontSize: 8,
+      letterSpacing: 0.5,
     },
     field: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      height: 54,
+      gap: 8,
+      height: 42,
       borderWidth: 1,
       borderColor: colors.line,
       backgroundColor: colors.surface,
       borderRadius: radius.md,
-      paddingHorizontal: 13,
-      marginBottom: 18,
+      paddingHorizontal: 10,
+      marginBottom: 8,
     },
     fieldIcon: {
-      width: 28,
-      height: 28,
-      borderRadius: 9,
+      width: 24,
+      height: 24,
+      borderRadius: 8,
       backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
@@ -485,33 +490,33 @@ const createStyles = (colors: Palette) =>
     fieldValue: {
       flex: 1,
       fontFamily: fonts.medium,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.ink,
     },
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 9,
+      marginBottom: 4,
     },
     optional: {
       fontFamily: fonts.medium,
-      fontSize: 8.5,
-      letterSpacing: 0.8,
+      fontSize: 8,
+      letterSpacing: 0.6,
       color: colors.inkFaint,
     },
     chips: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
-      marginBottom: 20,
+      gap: 6,
+      marginBottom: 8,
     },
     chip: {
-      height: 38,
+      height: 30,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
-      paddingHorizontal: 14,
+      gap: 4,
+      paddingHorizontal: 9,
       borderRadius: radius.pill,
       borderWidth: 1,
       borderColor: colors.line,
@@ -523,7 +528,7 @@ const createStyles = (colors: Palette) =>
     },
     chipText: {
       fontFamily: fonts.regular,
-      fontSize: 13,
+      fontSize: 11.5,
       color: colors.inkSoft,
     },
     chipTextActive: {
@@ -535,77 +540,74 @@ const createStyles = (colors: Palette) =>
       borderColor: colors.line,
       backgroundColor: colors.surface,
       borderRadius: radius.md,
-      padding: 12,
-      marginBottom: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      marginBottom: 2,
     },
     noteInput: {
-      minHeight: 54,
+      height: 40,
       fontFamily: fonts.regular,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 13,
+      lineHeight: 17,
       color: colors.ink,
       textAlignVertical: 'top',
       padding: 0,
     },
-    noteCount: {
-      fontFamily: fonts.medium,
-      fontSize: 9.5,
-      color: colors.inkFaint,
-      alignSelf: 'flex-end',
-      marginTop: 3,
-    },
     confirmCard: {
       backgroundColor: colors.redSoft,
       borderRadius: radius.md,
-      padding: 14,
-      marginTop: 12,
+      padding: 10,
+      marginTop: 6,
     },
     confirmTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 5,
     },
     confirmTitle: {
       fontFamily: fonts.medium,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.redDeep,
     },
     confirmBody: {
       fontFamily: fonts.regular,
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: 11,
+      lineHeight: 15,
       color: colors.redDeep,
       opacity: 0.8,
-      marginTop: 5,
+      marginTop: 3,
     },
     confirmActions: {
       flexDirection: 'row',
-      gap: 8,
-      marginTop: 12,
+      gap: 6,
+      marginTop: 8,
     },
     confirmButton: {
       flex: 1,
-      height: 40,
+      height: 36,
       backgroundColor: colors.surface,
     },
     deleteLink: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 6,
-      height: 44,
-      marginTop: 12,
+      gap: 5,
+      height: 32,
+      marginTop: 4,
     },
     deleteLinkText: {
       fontFamily: fonts.medium,
-      fontSize: 13,
+      fontSize: 12,
       color: colors.red,
     },
     footer: {
-      paddingTop: 12,
+      paddingTop: 8,
       borderTopWidth: 1,
       borderTopColor: colors.line,
-      marginTop: 4,
+      marginTop: 0,
+    },
+    saveButton: {
+      height: 42,
     },
     pressed: {
       opacity: 0.72,

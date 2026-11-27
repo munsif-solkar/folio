@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ComponentRef, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,6 @@ import {
 
 import { AppScreen } from '@/components/AppScreen';
 import { AppText } from '@/components/AppText';
-import { Avatar } from '@/components/Avatar';
 import { useToast } from '@/components/Toast';
 import { Button, IconButton } from '@/components/ui';
 import { successFeedback } from '@/lib/feedback';
@@ -77,43 +75,35 @@ export default function PersonFormScreen() {
 
   return (
     <AppScreen edges={['top', 'bottom', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={styles.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.root} behavior="padding">
         <View style={[styles.topbar, { paddingHorizontal: density.pagePadding }]}>
-          <IconButton name="close" label={editing ? 'Cancel editing' : 'Cancel'} onPress={close} />
-          <AppText variant="micro">{editing ? 'EDIT ACCOUNT' : 'NEW ACCOUNT'}</AppText>
+          <IconButton
+            name="close"
+            label={editing ? 'Cancel editing' : 'Cancel'}
+            onPress={close}
+            size={38}
+            iconSize={20}
+          />
+          <View style={styles.topbarCopy}>
+            <AppText variant="micro" style={styles.eyebrow}>
+              {editing ? 'EDIT ACCOUNT' : 'NEW ACCOUNT'}
+            </AppText>
+            <AppText variant="heading" style={styles.headerTitle}>
+              {editing ? 'Edit account' : 'New account'}
+            </AppText>
+          </View>
           <View style={styles.topbarSpacer} />
         </View>
 
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            { paddingHorizontal: density.pagePadding, paddingTop: density.heroTop > 20 ? 10 : 14 },
+            { paddingHorizontal: density.pagePadding, paddingTop: 6 },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.hero, { paddingBottom: density.sectionGap }]}>
-            <View style={styles.avatarWrap}>
-              <View style={styles.avatarHalo} />
-              <Avatar name={name || 'New person'} size={82} />
-              <View style={styles.avatarBadge}>
-                <MaterialIcons name={editing ? 'edit' : 'add'} size={13} color={colors.bg} />
-              </View>
-            </View>
-            <AppText variant="display" style={styles.title}>
-              {editing ? 'Edit account' : 'New account'}
-            </AppText>
-            <AppText style={styles.subtitle}>
-              {editing
-                ? 'Keep the name and contact number up to date.'
-                : 'Who are you keeping a tab with?'}
-            </AppText>
-          </View>
-
-          <View style={[styles.form, { gap: density.sectionGap > 24 ? 20 : 16 }]}>
+          <View style={styles.form}>
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <AppText variant="micro" style={styles.fieldLabel}>
@@ -123,7 +113,7 @@ export default function PersonFormScreen() {
               </View>
               <View style={[styles.inputCard, name.trim().length > 0 && styles.inputCardFilled]}>
                 <View style={styles.inputIcon}>
-                  <MaterialIcons name="person-outline" size={18} color={colors.inkMuted} />
+                  <MaterialIcons name="person-outline" size={16} color={colors.inkMuted} />
                 </View>
                 <TextInput
                   value={name}
@@ -148,7 +138,7 @@ export default function PersonFormScreen() {
                     hitSlop={8}
                     style={({ pressed }) => pressed && styles.pressed}
                   >
-                    <MaterialIcons name="close" size={17} color={colors.inkFaint} />
+                    <MaterialIcons name="close" size={16} color={colors.inkFaint} />
                   </Pressable>
                 ) : null}
               </View>
@@ -163,7 +153,7 @@ export default function PersonFormScreen() {
               </View>
               <View style={styles.inputCard}>
                 <View style={styles.inputIcon}>
-                  <MaterialIcons name="call" size={17} color={colors.inkMuted} />
+                  <MaterialIcons name="call" size={16} color={colors.inkMuted} />
                 </View>
                 <TextInput
                   ref={phoneRef}
@@ -188,23 +178,10 @@ export default function PersonFormScreen() {
                     hitSlop={8}
                     style={({ pressed }) => pressed && styles.pressed}
                   >
-                    <MaterialIcons name="close" size={17} color={colors.inkFaint} />
+                    <MaterialIcons name="close" size={16} color={colors.inkFaint} />
                   </Pressable>
                 ) : null}
               </View>
-              <AppText style={styles.hint}>Handy when you need to send a reminder.</AppText>
-            </View>
-          </View>
-
-          <View style={[styles.privacy, { marginTop: density.sectionGap }]}>
-            <View style={styles.privacyIcon}>
-              <MaterialIcons name="lock-outline" size={17} color={colors.inkSoft} />
-            </View>
-            <View style={styles.privacyBody}>
-              <AppText style={styles.privacyTitle}>Private by design</AppText>
-              <AppText style={styles.privacyText}>
-                This account is saved to this device only. Nothing is uploaded or synced.
-              </AppText>
             </View>
           </View>
         </ScrollView>
@@ -213,6 +190,8 @@ export default function PersonFormScreen() {
           <Button
             label={editing ? 'Save changes' : 'Create account'}
             icon={editing ? 'check' : 'person-add-alt-1'}
+            compact
+            style={styles.saveButton}
             onPress={save}
             disabled={!canSave}
           />
@@ -230,71 +209,41 @@ const createStyles = (colors: Palette) =>
     topbar: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingTop: 6,
+      gap: 10,
+      paddingTop: 2,
+      paddingBottom: 6,
+    },
+    topbarCopy: {
+      flex: 1,
+      gap: 1,
+    },
+    eyebrow: {
+      fontSize: 9.5,
+      letterSpacing: 0.7,
+      color: colors.inkMuted,
+    },
+    headerTitle: {
+      fontSize: 17,
+      lineHeight: 21,
     },
     topbarSpacer: {
-      width: 42,
-      height: 42,
+      width: 38,
+      height: 38,
     },
     content: {
-      paddingBottom: 24,
-    },
-    hero: {
-      alignItems: 'center',
-      paddingTop: 6,
-    },
-    avatarWrap: {
-      width: 110,
-      height: 100,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 12,
-    },
-    avatarHalo: {
-      position: 'absolute',
-      width: 104,
-      height: 104,
-      borderRadius: 52,
-      backgroundColor: colors.surfaceMuted,
-    },
-    avatarBadge: {
-      position: 'absolute',
-      right: 13,
-      bottom: 6,
-      width: 25,
-      height: 25,
-      borderRadius: 13,
-      backgroundColor: colors.ink,
-      borderWidth: 3,
-      borderColor: colors.bg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    title: {
-      fontSize: 30,
-      lineHeight: 36,
-      textAlign: 'center',
-    },
-    subtitle: {
-      fontFamily: fonts.regular,
-      fontSize: 14,
-      lineHeight: 20,
-      color: colors.inkMuted,
-      textAlign: 'center',
-      marginTop: 5,
+      paddingBottom: 10,
     },
     form: {
-      gap: 20,
+      gap: 12,
     },
     fieldGroup: {
-      gap: 8,
+      gap: 5,
     },
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 2,
+      paddingHorizontal: 1,
     },
     fieldLabel: {
       color: colors.inkMuted,
@@ -314,22 +263,22 @@ const createStyles = (colors: Palette) =>
     inputCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      minHeight: 58,
+      gap: 8,
+      minHeight: 46,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.line,
       borderRadius: radius.md,
-      paddingHorizontal: 13,
+      paddingHorizontal: 11,
       ...shadowSoft,
     },
     inputCardFilled: {
       borderColor: colors.blueLine,
     },
     inputIcon: {
-      width: 31,
-      height: 31,
-      borderRadius: 10,
+      width: 26,
+      height: 26,
+      borderRadius: 8,
       backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
@@ -337,52 +286,19 @@ const createStyles = (colors: Palette) =>
     input: {
       flex: 1,
       fontFamily: fonts.medium,
-      fontSize: 15.5,
+      fontSize: 14.5,
       color: colors.ink,
-      paddingVertical: 14,
-    },
-    hint: {
-      fontFamily: fonts.regular,
-      fontSize: 10.5,
-      color: colors.inkFaint,
-      paddingHorizontal: 2,
-    },
-    privacy: {
-      flexDirection: 'row',
-      gap: 11,
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radius.lg,
-      padding: 14,
-    },
-    privacyIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 11,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    privacyBody: {
-      flex: 1,
-      gap: 2,
-    },
-    privacyTitle: {
-      fontFamily: fonts.medium,
-      fontSize: 12.5,
-      color: colors.ink,
-    },
-    privacyText: {
-      fontFamily: fonts.regular,
-      fontSize: 11,
-      lineHeight: 16,
-      color: colors.inkMuted,
+      paddingVertical: 9,
     },
     footer: {
-      paddingTop: 12,
-      paddingBottom: 10,
+      paddingTop: 8,
+      paddingBottom: 8,
       borderTopWidth: 1,
       borderTopColor: colors.line,
       backgroundColor: colors.bg,
+    },
+    saveButton: {
+      height: 42,
     },
     notFound: {
       flex: 1,
